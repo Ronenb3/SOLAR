@@ -1,0 +1,17 @@
+[Unit]
+Description=Solar Panel Data Monitor
+Documentation=https://github.com/your-repo/solar-tracker
+After=network.target
+
+[Service]
+Type=simple
+User=techenergy3
+WorkingDirectory=/home/techenergy3/solar
+ExecStart=/home/techenergy3/solar/venv/bin/python -m solar_tracker.monitor --headless
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

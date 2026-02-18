@@ -1,0 +1,16 @@
+# Core
+pyyaml>=6.0
+suncalc>=0.1
+numpy>=1.24
+pyserial>=3.5
+
+# Data & analysis
+pandas>=2.0
+matplotlib>=3.7
+
+# Web dashboard
+flask>=3.0
+
+# Pi hardware (only needed on Raspberry Pi)
+# RPi.GPIO>=0.7
+# pigpio>=1.78

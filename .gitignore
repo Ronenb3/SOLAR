@@ -1,0 +1,29 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Data (tracked separately or too large for git)
+data/*.db
+logs/
+reports/
+
+# Keep the battery data files in git (they're small and valuable)
+# !BatteryDat_*.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.bak

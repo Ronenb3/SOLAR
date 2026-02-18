@@ -1,0 +1,72 @@
+# Solar Tracker Configuration
+# Edit this file to match your setup — no need to touch any code
+
+location:
+  latitude: 42.25
+  longitude: -71.82
+  timezone: America/New_York
+
+# GPIO Pin Assignments (BCM numbering)
+motors:
+  azimuth:
+    enable_pin: 16
+    direction_pin: 20
+    pulse_pin: 21
+    steps_per_revolution: 400
+    gear_ratio: 40
+  altitude:
+    enable_pin: 26
+    direction_pin: 19
+    pulse_pin: 13
+
+# Home position — where the panel parks at sunset and starts at sunrise
+home_position:
+  azimuth_degrees: 90
+  altitude_degrees: 91
+
+# Tracking behavior
+tracking:
+  update_interval_seconds: 300    # how often to reposition (5 min)
+  min_altitude_degrees: 1         # stop tracking when sun is below this
+  pulse_delay_seconds: 0.001      # stepper motor pulse timing
+  jump_to_sunrise: true           # calculate sunrise position instead of starting at home
+
+# Data logging
+database:
+  path: data/solar.db             # SQLite database file
+  import_old_files: true          # import BatteryDat_*.txt on first run
+
+logging:
+  path: logs/solar_tracker.log
+  level: INFO                     # DEBUG, INFO, WARNING, ERROR
+  max_file_size_mb: 10
+  backup_count: 5
+
+# VE.Direct charge controllers (USB serial)
+vedirect:
+  device1:
+    port: /dev/ttyUSB0
+    timeout: 60
+    label: "Tracking Panel"
+  device2:
+    port: /dev/ttyUSB1
+    timeout: 60
+    label: "Fixed Panel"
+
+# Battery specs (for Depth of Discharge calculation)
+battery:
+  capacity_ah: 40.0
+  internal_resistance_ohms: 0.015
+
+# Weather API (free tier — openweathermap.org/api)
+# Sign up and paste your key here to enable weather-aware tracking
+weather:
+  enabled: false
+  api_key: "YOUR_API_KEY_HERE"
+  cloud_threshold_percent: 80     # skip tracking if cloudiness > this
+
+# Web dashboard
+dashboard:
+  enabled: true
+  host: "0.0.0.0"                 # 0.0.0.0 = accessible from any device on network
+  port: 8080

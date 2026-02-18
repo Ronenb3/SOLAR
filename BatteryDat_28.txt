@@ -1,0 +1,1 @@
+BatV1, BatI1, BatEn1, PanelV1, PanelP1, BatV2, BatI2, BatEn2, PanelV2, PanelP2, Hours

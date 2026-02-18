@@ -1,0 +1,20 @@
+[Unit]
+Description=Solar Panel Sun Tracker
+Documentation=https://github.com/your-repo/solar-tracker
+After=network.target
+
+[Service]
+Type=simple
+User=techenergy3
+WorkingDirectory=/home/techenergy3/solar
+ExecStart=/home/techenergy3/solar/venv/bin/python -m solar_tracker.tracker
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+# Safety: stop tracker at night (optional — the script handles sunset itself)
+# TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
