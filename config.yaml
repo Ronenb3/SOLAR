@@ -53,10 +53,14 @@ vedirect:
     timeout: 60
     label: "Fixed Panel"
 
-# Battery specs (for Depth of Discharge calculation)
+# Battery specs — Valence U1-12RT (LiFePO4)
 battery:
+  model: "Valence U1-12RT"
+  chemistry: LiFePO4
   capacity_ah: 40.0
-  internal_resistance_ohms: 0.015
+  nominal_voltage: 12.8             # 4 cells x 3.2V
+  full_charge_voltage: 14.6
+  internal_resistance_ohms: 0.040
 
 # Weather API (free tier — openweathermap.org/api)
 # Sign up and paste your key here to enable weather-aware tracking
@@ -64,6 +68,18 @@ weather:
   enabled: false
   api_key: "YOUR_API_KEY_HERE"
   cloud_threshold_percent: 80     # skip tracking if cloudiness > this
+
+# Discharge test — controlled battery drain via IXYS CPC1718J SSR
+# Wiring: Pi GPIO24 (Row2 Pin9) -> 150ohm resistor -> CPC1718J Pin 1 (LED+)
+#         Pi GND   (Row2 Pin7)                      -> CPC1718J Pin 2 (LED-)
+#         Battery(+) -> Rheostat -> CPC1718J Pin 3 (Load)
+#         CPC1718J Pin 4 (Load)  -> Battery(-)
+discharge:
+  ssr_tracking_pin: 24            # GPIO pin for tracking battery SSR (BCM numbering)
+  ssr_fixed_pin: 25               # GPIO pin for fixed battery SSR (BCM numbering)
+  load_resistance_ohms: 5.5       # rheostat midpoint (~2.4A, ~32W at 13.3V — within CPC1718J 30A rating)
+  cutoff_voltage: 10.5            # stop discharge here — 10.5V is safe minimum for LiFePO4
+  read_interval_seconds: 30       # how often to read voltage during test
 
 # Web dashboard
 dashboard:

@@ -31,14 +31,19 @@ logger = logging.getLogger("monitor")
 # Battery Depth of Discharge estimation
 # ---------------------------------------------------------------------------
 
-# Manufacturer discharge curves for a lead-acid battery
+# LiFePO4 discharge curves — Valence U1-12RT (4-cell, 12.8V nominal)
+# LiFePO4 has a very flat discharge curve: ~13.2V for 10-80% DoD
 # X-axis: DoD percentage, Y-axis: voltage at that DoD
-DOD_AXIS = np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
+DOD_AXIS = np.array([0, 5, 10, 20, 30, 40, 50, 60, 70, 80, 85, 90, 95, 100])
 CURVES = {
-    "C2":  np.array([13.6, 13.4, 13.3, 13.2, 13.18, 13.1, 13.0, 12.9, 12.8, 12.6, 12.0]),
-    "C3":  np.array([13.6, 13.45, 13.35, 13.28, 13.23, 13.15, 13.05, 12.95, 12.83, 12.65, 12.10]),
-    "C5":  np.array([13.6, 13.5, 13.42, 13.35, 13.28, 13.20, 13.12, 13.00, 12.90, 12.70, 12.20]),
-    "C10": np.array([13.6, 13.55, 13.48, 13.42, 13.35, 13.27, 13.18, 13.05, 12.92, 12.75, 12.30]),
+    # C/3 rate (~13A for 40Ah battery)
+    "C3":  np.array([14.4, 13.5, 13.30, 13.25, 13.22, 13.20, 13.18, 13.15, 13.10, 12.80, 12.20, 11.40, 10.50, 10.0]),
+    # C/5 rate (~8A)
+    "C5":  np.array([14.4, 13.5, 13.32, 13.28, 13.25, 13.23, 13.21, 13.18, 13.14, 12.90, 12.40, 11.60, 10.70, 10.0]),
+    # C/10 rate (~4A)
+    "C10": np.array([14.4, 13.5, 13.35, 13.30, 13.28, 13.26, 13.24, 13.21, 13.18, 13.00, 12.60, 11.80, 10.90, 10.0]),
+    # C/32 rate (~1.25A — our discharge test with 10 ohm rheostat)
+    "C32": np.array([14.4, 13.5, 13.38, 13.34, 13.32, 13.30, 13.28, 13.26, 13.22, 13.10, 12.80, 12.00, 11.00, 10.0]),
 }
 
 
@@ -48,9 +53,10 @@ def _interp_dod(voltage: float, curve: np.ndarray) -> float:
 
 
 def estimate_dod(voltage: float, current: float, capacity_ah: float = 40.0,
-                 r_internal: float = 0.015) -> float:
+                 r_internal: float = 0.040) -> float:
     """Estimate Depth of Discharge from measured voltage and current.
     
+    Uses LiFePO4 discharge curves for Valence U1-12RT battery.
     Compensates for internal resistance voltage drop and interpolates
     between discharge curves based on actual C-rate.
     
@@ -63,29 +69,32 @@ def estimate_dod(voltage: float, current: float, capacity_ah: float = 40.0,
     Returns:
         Estimated DoD in percent (0 = full, 100 = empty)
     """
-    # Compensate for internal resistance to get open-circuit voltage
-    v_oc = voltage + current * r_internal
+    # Compensate for internal resistance to get open-circuit voltage.
+    # VE.Direct convention: current < 0 when discharging, > 0 when charging.
+    # During discharge the terminal voltage sags below V_oc by I_out * R_int,
+    # so V_oc = V_terminal - I_vedirect * R_int  (subtracting a negative → adds back the sag).
+    v_oc = voltage - current * r_internal
     c_rate = abs(current) / capacity_ah
 
+    dod32 = _interp_dod(v_oc, CURVES["C32"])
     dod10 = _interp_dod(v_oc, CURVES["C10"])
     dod5 = _interp_dod(v_oc, CURVES["C5"])
     dod3 = _interp_dod(v_oc, CURVES["C3"])
-    dod2 = _interp_dod(v_oc, CURVES["C2"])
 
     # Interpolate between the two nearest C-rate curves
-    if c_rate <= 0.10:
-        return dod10
+    if c_rate <= 0.03:
+        return dod32
+    elif c_rate <= 0.10:
+        w = (c_rate - 0.03) / 0.07
+        return (1 - w) * dod32 + w * dod10
     elif c_rate <= 0.20:
         w = (c_rate - 0.10) / 0.10
         return (1 - w) * dod10 + w * dod5
     elif c_rate <= 0.33:
         w = (c_rate - 0.20) / 0.13
         return (1 - w) * dod5 + w * dod3
-    elif c_rate <= 0.50:
-        w = (c_rate - 0.33) / 0.17
-        return (1 - w) * dod3 + w * dod2
     else:
-        return dod2
+        return dod3
 
 
 # ---------------------------------------------------------------------------
