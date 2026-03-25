@@ -125,8 +125,8 @@ class DischargeTest:
         try:
             data = self.ve.read_data_single()
             return {
-                "voltage": data.get("V", 0) / 1000.0,
-                "current": data.get("I", 0) / 1000.0,
+                "voltage": int(data.get("V", 0)) / 1000.0,
+                "current": int(data.get("I", 0)) / 1000.0,
             }
         except Exception as e:
             logger.error(f"VE.Direct read error: {e}")
