@@ -130,7 +130,7 @@ class Battery:
 class DischargeTest:
 
     def __init__(self, config: dict = None, simulate: bool = False,
-                 single: bool = False):
+                 single: bool = False, second_only: bool = False):
         self.config = config or load_config()
         self.simulate = simulate
         self.running = False
@@ -154,15 +154,23 @@ class DischargeTest:
         b1_port = ve_cfg.get("device1", {}).get("port", "/dev/ttyUSB0")
         b2_port = ve_cfg.get("device2", {}).get("port", "/dev/ttyUSB1")
 
-        self.batteries = [
-            Battery("Bat1", dc.get("ssr_tracking_pin", 24), b1_port,
-                    self.cutoff_voltage, self.capacity_ah, simulate),
-        ]
-        if not single:
-            self.batteries.append(
+        if second_only:
+            self.batteries = [
                 Battery("Bat2", dc.get("ssr_fixed_pin", 25), b2_port,
-                        self.cutoff_voltage, self.capacity_ah, simulate)
-            )
+                        self.cutoff_voltage, self.capacity_ah, simulate),
+            ]
+        elif single:
+            self.batteries = [
+                Battery("Bat1", dc.get("ssr_tracking_pin", 24), b1_port,
+                        self.cutoff_voltage, self.capacity_ah, simulate),
+            ]
+        else:
+            self.batteries = [
+                Battery("Bat1", dc.get("ssr_tracking_pin", 24), b1_port,
+                        self.cutoff_voltage, self.capacity_ah, simulate),
+                Battery("Bat2", dc.get("ssr_fixed_pin", 25), b2_port,
+                        self.cutoff_voltage, self.capacity_ah, simulate),
+            ]
 
         signal.signal(signal.SIGINT,  self._handle_signal)
         signal.signal(signal.SIGTERM, self._handle_signal)
@@ -388,6 +396,8 @@ def main():
     parser.add_argument("--simulate", action="store_true")
     parser.add_argument("--one", action="store_true",
                         help="Run battery 1 only (default: both)")
+    parser.add_argument("--two", action="store_true",
+                        help="Run battery 2 only")
     parser.add_argument("--cutoff", type=float,
                         help="Cutoff voltage (default from config)")
     parser.add_argument("--interval", type=int,
@@ -402,7 +412,7 @@ def main():
     if args.interval is not None:
         config.setdefault("discharge", {})["read_interval_seconds"] = args.interval
 
-    DischargeTest(config=config, simulate=args.simulate, single=args.one).run()
+    DischargeTest(config=config, simulate=args.simulate, single=args.one, second_only=args.two).run()
 
 
 if __name__ == "__main__":
